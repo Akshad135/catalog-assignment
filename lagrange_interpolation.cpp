@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <map>
 #include <vector>
@@ -7,6 +6,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <iterator>
+#include <sstream>
 
 struct Point {
     double x, y;
@@ -42,23 +42,26 @@ double findConstantTerm(const std::vector<Point>& points) {
     return lagrangeInterpolation(points, 0.0);
 }
 
-int main(int argc, char** argv) {
-    const char* filename = "input.json";
-    if (argc > 1) filename = argv[1];
-
-    std::ifstream in(filename);
-    if (!in) {
-        std::cerr << "Failed to open " << filename << '\n';
+int main() {
+    // Read JSON from standard input
+    std::string s;
+    std::string line;
+    
+    std::cout << "Enter JSON input (press Ctrl+D on Unix/Linux or Ctrl+Z on Windows when done):" << std::endl;
+    
+    while (std::getline(std::cin, line)) {
+        s += line + "\n";
+    }
+    
+    if (s.empty()) {
+        std::cerr << "No input provided." << std::endl;
         return 1;
     }
-
-    std::string s((std::istreambuf_iterator<char>(in)),
-                  std::istreambuf_iterator<char>());
-
+    
     std::map<int, std::pair<int, std::string>> entries;
     std::vector<Point> points;
     size_t pos = 0;
-
+    
     // Parse JSON more carefully to avoid duplicates
     while (true) {
         // Find the start of a key
@@ -83,7 +86,7 @@ int main(int argc, char** argv) {
             pos = q2 + 1;
             continue;
         }
-
+        
         int x;
         try { 
             x = std::stoi(key); 
@@ -92,12 +95,12 @@ int main(int argc, char** argv) {
             pos = q2 + 1;
             continue; 
         }
-
+        
         if (x == 0) {
             pos = q2 + 1;
             continue;
         }
-
+        
         // Find the opening brace for this key's object
         size_t brace = s.find('{', q2);
         if (brace == std::string::npos) break;
@@ -107,28 +110,32 @@ int main(int argc, char** argv) {
         if (closeBrace == std::string::npos) break;
         
         std::string objectStr = s.substr(brace, closeBrace - brace + 1);
-
+        
         // Extract base
         size_t baseKey = objectStr.find("\"base\"");
         if (baseKey == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         size_t colon = objectStr.find(':', baseKey);
         if (colon == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         size_t bq1 = objectStr.find('"', colon);
         if (bq1 == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         size_t bq2 = objectStr.find('"', bq1 + 1);
         if (bq2 == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         std::string baseStr = objectStr.substr(bq1 + 1, bq2 - bq1 - 1);
         int base;
         try {
@@ -137,30 +144,34 @@ int main(int argc, char** argv) {
             pos = closeBrace + 1;
             continue;
         }
-
+        
         // Extract value
         size_t valueKey = objectStr.find("\"value\"");
         if (valueKey == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         size_t vcolon = objectStr.find(':', valueKey);
         if (vcolon == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         size_t vq1 = objectStr.find('"', vcolon);
         if (vq1 == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         size_t vq2 = objectStr.find('"', vq1 + 1);
         if (vq2 == std::string::npos) {
             pos = closeBrace + 1;
             continue;
         }
+        
         std::string valueStr = objectStr.substr(vq1 + 1, vq2 - vq1 - 1);
-
+        
         // Convert value from specified base
         long long y;
         try { 
@@ -171,7 +182,7 @@ int main(int argc, char** argv) {
             pos = closeBrace + 1;
             continue; 
         }
-
+        
         // Only add if we haven't seen this x value before
         if (entries.find(x) == entries.end()) {
             entries[x] = {base, valueStr};
@@ -180,17 +191,16 @@ int main(int argc, char** argv) {
         
         pos = closeBrace + 1;
     }
-
+    
     if (points.empty()) {
-        std::cerr << "No valid points found in the input file.\n";
+        std::cerr << "No valid points found in the input." << std::endl;
         return 1;
     }
-
+    
     std::cout << std::fixed << std::setprecision(10);
-
     // Find the constant term (secret in Shamir's Secret Sharing)
     double constantTerm = findConstantTerm(points);
     std::cout << constantTerm << std::endl;
-
+    
     return 0;
 }
