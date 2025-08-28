@@ -38,14 +38,8 @@ double lagrangeInterpolation(const std::vector<Point>& points, double x) {
     return result;
 }
 
-// Find the constant term of the polynomial (secret in Shamir's Secret Sharing)
 double findConstantTerm(const std::vector<Point>& points) {
     return lagrangeInterpolation(points, 0.0);
-}
-
-// Evaluate the polynomial at any given x using Lagrange interpolation
-double evaluatePolynomial(const std::vector<Point>& points, double x) {
-    return lagrangeInterpolation(points, x);
 }
 
 int main(int argc, char** argv) {
@@ -99,7 +93,6 @@ int main(int argc, char** argv) {
             continue; 
         }
 
-        // Skip x = 0 for Shamir's Secret Sharing (we're trying to find the value at x=0)
         if (x == 0) {
             pos = q2 + 1;
             continue;
